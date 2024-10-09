@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>g/place</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(20, 20px);
+            grid-template-rows: repeat(20, 20px);
+            gap: 2px;
+            margin-top: 20px;
+        }
+
+        .square {
+            width: 20px;
+            height: 20px;
+            background-color: #444;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: 1px solid #333;
+        }
+
+        #color-picker {
+            display: flex;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .color-box {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            border: 2px solid #000;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin: 20px 0;
+            text-align: center;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>g/place lmao</h1>
+    <div id='grid'></div>
+
+    <div id='color-picker'>
+        <div class='color-box' style='background-color: #ff0000;' data-color='#ff0000'></div>
+        <div class='color-box' style='background-color: #00ff00;' data-color='#00ff00'></div>
+        <div class='color-box' style='background-color: #0000ff;' data-color='#0000ff'></div>
+        <div class='color-box' style='background-color: #ffff00;' data-color='#ffff00'></div>
+        <div class='color-box' style='background-color: #ff00ff;' data-color='#ff00ff'></div>
+        <div class='color-box' style='background-color: #00ffff;' data-color='#00ffff'></div>
+        <div class='color-box' style='background-color: #000000;' data-color='#000000'></div>
+        <div class='color-box' style='background-color: #ffffff;' data-color='#ffffff'></div>
+        <div class='color-box' style='background-color: #ffa500;' data-color='#ffa500'></div>
+        <div class='color-box' style='background-color: #800080;' data-color='#800080'></div>
+    </div>
+
+    <script>
+        const gridContainer = document.getElementById('grid');
+        const colorBoxes = document.querySelectorAll('.color-box');
+        let selectedColor = '#ff0000';
+
+        const socket = new WebSocket('wss://colors.guimx.me/api/ws');
+
+        socket.onopen = () => {
+            console.log('WebSocket connection established.');
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const grid = data.grid;
+
+            for (let row = 0; row < 20; row++) {
+                for (let col = 0; col < 20; col++) {
+                    const square = document.getElementById(`square-${row}-${col}`);
+                    square.style.backgroundColor = grid[row][col];
+                }
+            }
+        };
+
+        socket.onclose = () => {
+            console.log('WebSocket connection closed.');
+            alert('You have been disconnected from the WebSocket connection. Please reload your window.')
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        for (let row = 0; row < 20; row++) {
+            for (let col = 0; col < 20; col++) {
+                const square = document.createElement('div');
+                square.classList.add('square');
+                square.id = `square-${row}-${col}`;
+                square.dataset.row = row;
+                square.dataset.col = col;
+
+            
+                square.addEventListener('click', handleSquareClick);
+
+                gridContainer.appendChild(square);
+            }
+        }
+
+    
+        function handleSquareClick(event) {
+            const row = event.target.dataset.row;
+            const col = event.target.dataset.col;
+
+        
+            event.target.style.backgroundColor = selectedColor;
+
+        
+            sendPostRequest(row, col, selectedColor);
+        }
+
+    
+        function sendPostRequest(row, col, color) {
+            fetch('https://colors.guimx.me/api/changegrid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'row': row,
+                    'column': col,
+                    'color': color
+                },
+                body: JSON.stringify({
+                    'row': parseInt(row, 10),
+                    'column': parseInt(col, 10),
+                    'color': color
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Request failed: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+    
+        colorBoxes.forEach(box => {
+            box.addEventListener('click', function () {
+                selectedColor = this.dataset.color;
+                colorBoxes.forEach(b => b.style.border = '2px solid #000');
+                this.style.border = '2px solid #ff0000';
+            });
+        });
+    </script>
+</body>
+</html>
