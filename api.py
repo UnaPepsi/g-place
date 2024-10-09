@@ -36,6 +36,8 @@ async def change_grid(request: Request, row: int = Header(...), column: int = He
 async def websocket_endpoint(websocket: WebSocket):
 	if not websocket.client:
 		return await websocket.close()
+	if active_connections.get(websocket.client.host):
+		await active_connections[websocket.client.host].close()
 	await websocket.accept()
 	active_connections[websocket.client.host] = websocket
 	print(f'Got WebSocket connection. Users: {len(active_connections)}')

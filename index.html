@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:type" content="website">
+	<meta property="og:url" content="https://colors.guimx.me">
+	<meta property="og:title" content="g/place">
+	<meta property="og:description" content="An r/place clone">
+	<meta property="og:image" content="https://fun.guimx.me/r/h4xcKPWpSW.png?compress=false">
+    <meta name="theme-color" data-react-helmet="true" content="#C7502F">
     <title>g/place</title>
+    <link rel="icon" href="favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -54,6 +61,26 @@
             text-align: center;
             color: #ffffff;
         }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            align-items: center;
+            color: #cccccc;
+        }
+
+        footer img {
+            width: 20px;
+            height: auto;
+            margin-right: 5px;
+        }
+
+        a {
+            color: white;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -72,6 +99,13 @@
         <div class='color-box' style='background-color: #ffa500;' data-color='#ffa500'></div>
         <div class='color-box' style='background-color: #800080;' data-color='#800080'></div>
     </div>
+
+    <footer>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub Logo">
+        <a href="https://github.com/UnaPepsi/g-place" target="_blank">
+            <span>Source code</span>
+        </a>
+    </footer>
 
     <script>
         const gridContainer = document.getElementById('grid');
