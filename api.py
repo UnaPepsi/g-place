@@ -29,6 +29,8 @@ grid = [['#000000' for _ in range(20)] for _ in range(20)]
 async def change_grid(request: Request, row: int = Header(...), column: int = Header(...), color: str = Header(...)):
 	if not re.match(r'^#(?:[0-9a-fA-F]{3}){1,2}$',color):
 		raise HTTPException(status_code=400,detail={'error':'Hex not valid'})
+	if not (0 <= row <= 20) or not (0 <= column <= 20):
+		raise HTTPException(status_code=400,detail={'error':'Out of range'})
 	grid[row][column] = color
 	return {'status':'ok'}
 
