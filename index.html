@@ -81,6 +81,38 @@
             color: white;
             text-decoration: none;
         }
+
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(30, 30, 30, 0.9);
+            color: #ffffff;
+            border: 1px solid #4444;
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #blur-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
     </style>
 </head>
 <body>
@@ -107,6 +139,12 @@
         </a>
     </footer>
 
+    <div id="blur-background"></div>
+    <div id="popup">
+        <p id="popup-message"></p>
+    </div>
+
+
     <script>
         const gridContainer = document.getElementById('grid');
         const colorBoxes = document.querySelectorAll('.color-box');
@@ -132,8 +170,19 @@
 
         socket.onclose = () => {
             console.log('WebSocket connection closed.');
-            alert('You have been disconnected from the WebSocket connection. Please reload your window.')
+            showPopup('You have been disconnected from the WebSocket connection. Please reload your window.');
         };
+
+        function showPopup(message) {
+            document.getElementById('popup-message').innerText = message;
+            document.getElementById('blur-background').style.display = 'block';
+            document.getElementById('popup').style.display = 'block';
+
+            setTimeout(() => {
+            document.getElementById('popup').style.opacity = '1';
+            document.getElementById('blur-background').style.opacity = '1';
+            }, 10);
+        }
 
         socket.onerror = (error) => {
             console.error('WebSocket error:', error);

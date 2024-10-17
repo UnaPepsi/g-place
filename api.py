@@ -1,16 +1,33 @@
 from fastapi import FastAPI, Header, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import re
 import uvicorn
 from asyncio import sleep
+import asqlite
+import json
 
-active_connections: dict[str,WebSocket] = {}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+	global grid
+	pool = await asqlite.create_pool('grid.db')
+	async with pool.acquire() as conn:
+		await conn.execute('CREATE TABLE IF NOT EXISTS grid (color TEXT)')
+		result = await conn.fetchone('SELECT color FROM grid')
+		if not result:
+			grid = [['#000000' for _ in range(20)] for _ in range(20)]
+			await conn.execute('INSERT INTO grid VALUES (?)',json.dumps(grid))
+		else:
+			grid = json.loads(result[0])
+	yield
+	async with pool.acquire() as conn:
+		await conn.execute('UPDATE grid SET color = ?',json.dumps(grid))
 
 limiter = Limiter(get_remote_address)
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded,_rate_limit_exceeded_handler) #type: ignore
 
@@ -21,8 +38,6 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"]
 )
-
-grid = [['#000000' for _ in range(20)] for _ in range(20)]
 
 @app.post('/api/changegrid')
 @limiter.limit('5/second')
@@ -36,26 +51,15 @@ async def change_grid(request: Request, row: int = Header(...), column: int = He
 
 @app.websocket('/api/ws')
 async def websocket_endpoint(websocket: WebSocket):
-	if not websocket.client:
-		return await websocket.close()
-	if active_connections.get(websocket.client.host):
-		await active_connections[websocket.client.host].close()
 	await websocket.accept()
-	active_connections[websocket.client.host] = websocket
-	print(f'Got WebSocket connection. Users: {len(active_connections)}')
+	print('Got WebSocket connection')
 	try:
 		while True:
 			await sleep(1)
-			for _,conn in list(active_connections.items()).copy():
-				try:
-					await conn.send_json({'grid':grid})
-				except Exception as e:
-					active_connections.pop(websocket.client.host,None)
-					print(e)
+			await websocket.send_json({'grid':grid})
+	except: ...
 	finally:
-		active_connections.pop(websocket.client.host,None)
-		print(f'Connection lost. Users {len(active_connections)}')
-		await websocket.close()
+		print('Connection lost')
 
 if __name__ == '__main__':
 	print('Starting API.')
