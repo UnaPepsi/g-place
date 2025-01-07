@@ -82,7 +82,7 @@
             text-decoration: none;
         }
 
-        #popup {
+        .popup {
             display: none;
             position: fixed;
             top: 50%;
@@ -96,8 +96,21 @@
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             text-align: center;
-            opacity: 0;
-            transition: opacity 0.5s ease;
+        }
+
+        .popup button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #ff0000;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .popup button:hover {
+            background-color: #cf0606;
         }
 
         #blur-background {
@@ -116,10 +129,15 @@
     </style>
 </head>
 <body>
-    <h1>g/place lmao</h1>
-    <div id='grid'></div>
+    <div class="popup" id="welcome-popup">
+        <p>Welcome to g/place! Remember that because anyone can draw anything, you may see stuff you don't like.</p>
+        <button id="continue-button">I understand and I wish to proceed</button>
+    </div>
 
-    <div id='color-picker'>
+    <h1 style="display: none;" id="page-title">g/place lmao</h1>
+    <div id="grid" style="display: none;"></div>
+
+    <div id="color-picker" style="display: none;">
         <div class='color-box' style='background-color: #ff0000;' data-color='#ff0000'></div>
         <div class='color-box' style='background-color: #00ff00;' data-color='#00ff00'></div>
         <div class='color-box' style='background-color: #0000ff;' data-color='#0000ff'></div>
@@ -132,7 +150,7 @@
         <div class='color-box' style='background-color: #800080;' data-color='#800080'></div>
     </div>
 
-    <footer>
+    <footer style="display: none;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub Logo">
         <a href="https://github.com/UnaPepsi/g-place" target="_blank">
             <span>Source code</span>
@@ -140,96 +158,109 @@
     </footer>
 
     <div id="blur-background"></div>
-    <div id="popup">
+    <div id="disconnect-popup" class="popup">
         <p id="popup-message"></p>
     </div>
 
-
     <script>
-        const gridContainer = document.getElementById('grid');
-        const colorBoxes = document.querySelectorAll('.color-box');
-        let selectedColor = '#ff0000';
+        const welcomePopup = document.getElementById('welcome-popup');
+        const continueButton = document.getElementById('continue-button');
+        const pageTitle = document.getElementById('page-title');
+        const grid = document.getElementById('grid');
+        const colorPicker = document.getElementById('color-picker');
+        const footer = document.querySelector('footer');
 
-        const socket = new WebSocket('wss://colors.guimx.me/api/ws');
+        function initializePage() {
+            welcomePopup.style.display = 'none';
+            pageTitle.style.display = 'block';
+            grid.style.display = 'grid';
+            colorPicker.style.display = 'flex';
+            footer.style.display = 'flex';
 
-        socket.onopen = () => {
-            console.log('WebSocket connection established.');
-        };
+            initializeGrid();
+            connectWebSocket();
+        }
 
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const grid = data.grid;
+        if (localStorage.getItem('hasVisited')) {
+            initializePage();
+        } else {
+            welcomePopup.style.display = 'block';
+        }
 
+        continueButton.addEventListener('click', () => {
+            localStorage.setItem('hasVisited', 'true');
+            initializePage();
+        });
+
+        function initializeGrid() {
             for (let row = 0; row < 20; row++) {
                 for (let col = 0; col < 20; col++) {
-                    const square = document.getElementById(`square-${row}-${col}`);
-                    square.style.backgroundColor = grid[row][col];
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.id = `square-${row}-${col}`;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+
+                    square.addEventListener('click', handleSquareClick);
+
+                    grid.appendChild(square);
                 }
             }
-        };
+        }
 
-        socket.onclose = () => {
-            console.log('WebSocket connection closed.');
-            showPopup('You have been disconnected from the WebSocket connection. Please reload your window.');
-        };
+        function connectWebSocket() {
+            const socket = new WebSocket('wss://colors.guimx.me/api/ws');
+
+            socket.onopen = () => {
+                console.log('WebSocket connection established.');
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const gridData = data.grid;
+
+                for (let row = 0; row < 20; row++) {
+                    for (let col = 0; col < 20; col++) {
+                        const square = document.getElementById(`square-${row}-${col}`);
+                        square.style.backgroundColor = gridData[row][col];
+                    }
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed.');
+                showPopup('You have been disconnected from the server. Please reload your window')
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
 
         function showPopup(message) {
             document.getElementById('popup-message').innerText = message;
             document.getElementById('blur-background').style.display = 'block';
-            document.getElementById('popup').style.display = 'block';
+            document.getElementById('disconnect-popup').style.display = 'block';
 
             setTimeout(() => {
-            document.getElementById('popup').style.opacity = '1';
+            document.getElementById('disconnect-popup').style.opacity = '1';
             document.getElementById('blur-background').style.opacity = '1';
             }, 10);
         }
 
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
-
-        for (let row = 0; row < 20; row++) {
-            for (let col = 0; col < 20; col++) {
-                const square = document.createElement('div');
-                square.classList.add('square');
-                square.id = `square-${row}-${col}`;
-                square.dataset.row = row;
-                square.dataset.col = col;
-
-            
-                square.addEventListener('click', handleSquareClick);
-
-                gridContainer.appendChild(square);
-            }
-        }
-
-    
         function handleSquareClick(event) {
             const row = event.target.dataset.row;
             const col = event.target.dataset.col;
-
-        
             event.target.style.backgroundColor = selectedColor;
 
-        
-            sendPostRequest(row, col, selectedColor);
-        }
-
-    
-        function sendPostRequest(row, col, color) {
             fetch('https://colors.guimx.me/api/changegrid', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'row': row,
                     'column': col,
-                    'color': color
-                },
-                body: JSON.stringify({
-                    'row': parseInt(row, 10),
-                    'column': parseInt(col, 10),
-                    'color': color
-                })
+                    'color': selectedColor
+                }
             })
             .then(response => {
                 if (!response.ok) {
@@ -245,7 +276,9 @@
             });
         }
 
-    
+        let selectedColor = '#ff0000';
+        const colorBoxes = document.querySelectorAll('.color-box');
+
         colorBoxes.forEach(box => {
             box.addEventListener('click', function () {
                 selectedColor = this.dataset.color;
