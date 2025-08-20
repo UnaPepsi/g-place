@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta property="og:type" content="website">
-	<meta property="og:url" content="https://colors.guimx.me">
+	<meta property="og:url" content="https://colors.guimx.codes">
 	<meta property="og:title" content="g/place">
 	<meta property="og:description" content="An r/place clone">
-	<meta property="og:image" content="https://fun.guimx.me/r/h4xcKPWpSW.png?compress=false">
+	<meta property="og:image" content="https://i.imgur.com/GInud64.png">
     <meta name="theme-color" data-react-helmet="true" content="#C7502F">
     <title>g/place</title>
-    <link rel="icon" href="favicon.ico">
+    <link rel="icon" href="/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -209,7 +209,7 @@
         }
 
         function connectWebSocket() {
-            const socket = new WebSocket('wss://colors.guimx.me/api/ws');
+            const socket = new WebSocket('wss://colors.guimx.codes/api/ws');
 
             socket.onopen = () => {
                 console.log('WebSocket connection established.');
@@ -253,7 +253,7 @@
             const col = event.target.dataset.col;
             event.target.style.backgroundColor = selectedColor;
 
-            fetch('https://colors.guimx.me/api/changegrid', {
+            fetch('https://colors.guimx.codes/api/changegrid', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

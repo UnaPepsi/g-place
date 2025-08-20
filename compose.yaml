@@ -1,0 +1,7 @@
+services:
+  api:
+    volumes:
+      - /somediridk/grid.db:/app/grid.db
+    ports:
+      - '7171:7171'
+    build: .
